@@ -1,0 +1,164 @@
+---
+title: "Welcome & Course Overview"
+subtitle: "a4a Training Course — Module 1.0"
+author: "Danai Mantopoulou Palouka & Alessandro Ligas"
+date: today
+format:
+  # ---- standalone PDF: both the teaching slides and the handout -----------
+  beamer:
+    theme: metropolis
+    themeoptions:
+      - progressbar=frametitle
+      - numbering=fraction
+      - block=fill
+    aspectratio: 169
+    classoption: [t]
+    pdf-engine: xelatex
+    include-in-header: ../../_assets/a4a-beamer.tex
+    highlight-style: github
+    code-block-font-size: \scriptsize
+    # beamer frames do not scroll — keep figures short so they fit.
+    # Override per chunk with #| fig-height: when a plot needs more room.
+    fig-width: 8
+    fig-height: 2.8
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Welcome
+
+**a4a stock assessment training — JRC, Ispra**
+
+
+*Dates:* `14-18/09/2026` &nbsp;&nbsp; *Online:* `https://teams.cloud.microsoft/l/team/19%3AY56b91xOVbSLUum4-KYSFNF_pcG8ZmbTX6SizSWWVXc1%40thread.tacv2/conversations?groupId=20996d8f-a8b8-4517-9d7c-b433dd40afc6&tenantId=b24c8b06-522c-46fe-9080-70926f8dddb1`
+
+### Your trainers
+
+- **Danai Mantopoulou Palouka** — Scientific Officer, JRC
+- **Alessandro Ligas** — Scientific Officer, JRC
+
+::: {.notes}
+Keep this short. Names, roles, and where to find us during the own-work
+sessions — we are in the room the whole week.
+:::
+
+## Round table
+
+::: {.callout-tip title="Let's go round the table — 10 minutes each"}
+1. Who you are and where you work
+2. **Which stock you brought** — species, area, how many years
+3. What you currently use to assess it
+4. What you want to walk out with on Friday
+:::
+
+::: {.notes}
+Point 2 is the one that matters: note the stock, the year range and the number
+of indices, because the whole week is built around their data.
+:::
+
+## This course is built around your data
+
+Two experts, two stocks, one week.
+
+- Presentations are **deliberately short**
+- Roughly **half the day is yours** to work on your own assessment
+- We are around the whole time — interrupt us
+
+::: {.callout-warning title="What this means for you"}
+By Friday the goal is not that you have seen a4a demonstrated —
+it is that **your own stock has been assessed, diagnosed and reported.**
+:::
+
+## The four pillars
+
+| Pillar | Topic | When |
+|:--|:--|:--|
+| **1** | Data preparation & input | Day 1 |
+| **2** | Stock assessment workflow | Days 2–3 |
+| **3** | Advanced diagnostics & retrospective | Day 4 |
+| **4** | Reporting & presenting | Day 5 |
+
+::: {.notes}
+Pillar 2 is the heart of the course and the reason it spans two days.
+:::
+
+## The week at a glance
+
+| Day | Focus | You will end the day with |
+|:--|:--|:--|
+| **1** | FLR objects & data input | Your stock as an `FLStock` + `FLIndex` |
+| **2** | First fit & residuals | A default fit you can read |
+| **3** | Submodel refinement | A configuration you are happy with |
+| **4** | Retrospective & simulation | Evidence your model is sound |
+| **5** | Reference points & reporting | An assessment report |
+
+## The daily rhythm
+
+| Time | Activity |
+|:--|:--|
+| 09:00 – 10:30 | Presentation + guided hands-on |
+| 10:30 – 10:45 | Coffee |
+| 10:45 – 12:30 | **Your own data** |
+| 12:30 – 14:00 | Lunch |
+| 14:00 – 15:30 | Presentation + guided hands-on |
+| 15:30 onwards | **Your own data** |
+
+## Modular by design
+
+Every module is **self-contained**. That means we can:
+
+- **Skip** what you already know
+- **Expand** what turns out to be hard
+- **Reorder** if your data needs something sooner
+
+::: {.callout-tip title="Tell us"}
+If a session is too basic, too fast, or not what you need — say so
+at the break. The schedule is a proposal, not a contract.
+:::
+
+::: {.notes}
+Say this out loud and mean it. With two participants we can genuinely
+re-plan overnight.
+:::
+
+
+## Materials
+
+Everything lives in the course folder, one folder per module:
+
+```
+course/
+  day01/  M1.0_welcome, M1.1_flr_intro, ...
+  day02/  ...
+```
+
+Each module folder contains:
+
+- the **presentation** (`.pdf`, yours to keep)
+- a **guided hands-on script** we run together
+- an **exercise script** for your own data
+
+Reference: <https://flrproject.org/FLa4a/>
+
+## Before we start — software check
+
+::: {.callout-tip title="Run this now"}
+Open `handson_M1.0_setup_check.R` and run it top to bottom.
+
+It checks your R version, loads `FLCore`, `FLa4a` and `ggplotFL`,
+and runs a tiny assessment to prove the whole toolchain works.
+:::
+
+If anything fails, flag it now — we fix it before Module 1.1.
+
+::: {.notes}
+Do not move on until both participants get "ALL CHECKS PASSED".
+A broken FLa4a install on Day 1 costs the whole week.
+:::
+
+## Any questions?
+
+Then let's start with Module 1.1 — **what FLR is and why a4a lives inside it.**

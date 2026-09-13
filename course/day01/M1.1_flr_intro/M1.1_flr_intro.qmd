@@ -1,0 +1,203 @@
+---
+title: "Introduction to FLR"
+subtitle: "a4a Training Course — Module 1.1"
+author: "Danai Mantopoulou Palouka & Alessandro Ligas"
+date: today
+format:
+  # ---- standalone PDF: both the teaching slides and the handout -----------
+  beamer:
+    theme: metropolis
+    themeoptions:
+      - progressbar=frametitle
+      - numbering=fraction
+      - block=fill
+    aspectratio: 169
+    classoption: [t]
+    pdf-engine: xelatex
+    include-in-header: ../../_assets/a4a-beamer.tex
+    highlight-style: github
+    code-block-font-size: \scriptsize
+    # beamer frames do not scroll — keep figures short so they fit.
+    # Override per chunk with #| fig-height: when a plot needs more room.
+    fig-width: 8
+    fig-height: 2.8
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## The problem FLR was built to solve
+
+Every stock assessment group used to write its own software.
+
+- Methods that could not be compared
+- Results that could not be reproduced
+- Code that died with the person who wrote it
+
+::: {.callout-warning title="The consequence"}
+You could not test whether a management strategy was **robust**,
+because you could not connect the pieces.
+:::
+
+::: {.notes}
+This is the framing of the 2007 paper. Do not dwell — one minute. The experts
+have lived this problem themselves, so ask if it sounds familiar.
+:::
+
+## What FLR is
+
+*"A development effort directed towards the evaluation of fisheries
+management strategies. The overall goal is to develop a **common framework**
+to facilitate collaboration within and across disciplines."*
+
+**FLR** — *Fisheries Library for R*
+
+- A **collection of R packages**, not a single program
+- A **common set of objects** every package understands
+- An **open source** project, still actively developed
+
+\vfill
+\tiny Kell *et al.* (2007) *FLR: an open-source framework for the evaluation and
+development of management strategies.* ICES J. Mar. Sci. 64(4): 640–646.
+
+## The design principles
+
+| Principle | What it means for you |
+|:--|:--|
+| **Common currency** | Every package speaks the same objects |
+| **Object-oriented** | Data and metadata travel together |
+| **Extensible** | New methods plug into the same structures |
+| **Open source** | You can read, check and change the code |
+
+::: {.notes}
+"Data and metadata travel together" is the one that matters on Day 1 — units
+and dimension names are carried by the object, not kept in your head.
+:::
+
+## Why this helps you in practice
+
+- Your stock object works with **any** assessment method in FLR
+- Swap `a4a` for `XSA` or `SAM` — **the data does not change**
+- The output of the assessment feeds **straight into** reference points
+  and forecasts, with no re-formatting
+- Plotting, summarising and subsetting work the **same way** everywhere
+
+::: {.callout-tip title="The practical payoff"}
+You prepare your data **once**, on Day 1.
+Everything else this week reuses that same object.
+:::
+
+## The FLR universe
+
+| Area | Packages |
+|:--|:--|
+| Core objects & plotting | `FLCore`, `ggplotFL` |
+| Stock assessment | `FLa4a`, `FLXSA`, `FLSAM` |
+| Reference points & advice | `FLBRP` |
+| Forecasting & projection | `FLasher`, `FLash` |
+| Life history & biology | `FLife` |
+| Management Strategy Evaluation (MSE) | `mse`, `mseviz`, `FLFishery` |
+| Diagnostics | `FLa4a`, `a4adiags` |
+
+You do **not** need to know these. You need to know the six we use.
+
+## The six we use this week
+
+| Package | What it gives us | When |
+|:--|:--|:--|
+| `FLCore` | The objects: `FLQuant`, `FLStock`, `FLIndex` | Day 1 |
+| `ggplotFL` | Plot methods for FLR objects | Day 1 |
+| `FLa4a` | The assessment model itself, `sca()` | Days 2–4 |
+| `a4adiags` | Retrospective & hindcast diagnostics | Day 4 |
+| `FLBRP` | Reference points | Day 5 |
+| `FLasher` | Short-term forecasts | Day 5 |
+
+These are exactly the packages your setup check just loaded.
+
+## Two habits worth picking up now
+
+**Use accessors**
+
+```{r}
+#| eval: false
+catch(stk)            # yes
+stk@catch             # no
+catch(stk) <- newdata # checks the object stays valid
+```
+
+**Every class has a plural** — `FLStock` → `FLStocks`,
+`FLIndex` → `FLIndices`, `FLQuant` → `FLQuants`
+
+::: {.notes}
+The plural point matters because several FLR methods only accept the plural
+class. sca() happens to take either an FLIndex or an FLIndices, but wrapping
+a single survey in FLIndices() is the habit that travels safely.
+:::
+
+## Getting help
+
+```{r}
+#| eval: false
+help("FLStock")            # class documentation
+?sca                       # a method
+methods(class = "FLStock")  # what can I do with this?
+showClass("FLStock")
+```
+
+- FLa4a documentation: <https://flrproject.org/FLa4a/>
+- And: we are around all week
+
+## Looking inside a method
+
+```{r}
+#| eval: false
+methods(class = "FLStock")   # what can I do with this object?
+showMethods("plot")          # which classes does plot() handle?
+```
+
+`plot(ple4)` dispatches on **two** arguments — `x="FLStock"`, `y="missing"`:
+
+```{r}
+#| eval: false
+getMethod("plot", signature = list("FLStock", "missing"))
+```
+
+```r
+.local <- function (x, metrics = list(Rec = rec, SSB = ssb,
+                     Catch = catch, F = fbar), na.rm = TRUE, ...)
+```
+
+That default `metrics` list is **why** `plot(ple4)` gives you those four
+panels — and how you ask for different ones.
+
+::: {.notes}
+Run this live. The full method is ~50 lines, so scroll to the .local line and
+stop there — the point is the metrics default, not the whole body. Nothing in
+FLR is hidden: if you wonder what a method does, you can always read it.
+This also sets up M1.6, where we change metrics to plot what we want.
+:::
+
+## Optional Geeky Stuff
+
+::: {.callout-note title="Why S4 and not plain R?"}
+FLR uses **S4** classes rather than ordinary lists.
+
+- **Slots are typed** — an `FLStock` cannot hold the wrong thing
+- **Validity is checked** on creation and on replacement
+- **Methods dispatch on class** — `plot()` knows what it was handed
+
+The cost is a steeper learning curve. The benefit is that a malformed
+stock object fails loudly on Day 1, rather than silently producing a
+wrong assessment on Day 3.
+:::
+
+## Summary
+
+- FLR is a **common framework**, not one program
+- Its value is **interoperability**: prepare data once, reuse all week
+- We use **six** packages; `FLCore` is the foundation
+- Use **accessors**, and watch the **plurals**
+
+Next: **Module 1.2 — `FLQuant`, the building block everything is made of.**

@@ -1,0 +1,36 @@
+% ---------------------------------------------------------------------------
+% a4a training course --- beamer preamble
+% metropolis theme recoloured with the EC/JRC palette used by a4a-theme.scss
+% ---------------------------------------------------------------------------
+
+\definecolor{ecblue}{HTML}{004494}
+\definecolor{ecyellow}{HTML}{FFC107}
+\definecolor{ecgreen}{HTML}{28A745}
+\definecolor{ecgrey}{HTML}{6C757D}
+\definecolor{eclight}{HTML}{F8F9FA}
+
+% --- metropolis colour overrides -------------------------------------------
+\setbeamercolor{frametitle}{bg=ecblue, fg=white}
+\setbeamercolor{progress bar}{fg=ecyellow}
+\setbeamercolor{progress bar in head/foot}{fg=ecyellow}
+\setbeamercolor{progress bar in section page}{fg=ecyellow}
+\setbeamercolor{title separator}{fg=ecyellow}
+\setbeamercolor{structure}{fg=ecblue}
+\setbeamercolor{alerted text}{fg=ecblue}
+\setbeamercolor{normal text}{fg=black!85}
+
+% --- footer on every frame (mirrors the revealjs footer) -------------------
+\setbeamertemplate{frame footer}{a4a Stock Assessment Training --- JRC}
+\setbeamerfont{frame footer}{size=\tiny}
+\setbeamercolor{frame footer}{fg=ecgrey}
+
+% --- EC logo on the title slide -------------------------------------------
+% beamer cannot read SVG, so the PNG rendered from logo-ec--en_black.svg is used.
+% Both paths are listed so this file works from course/_templates/ (one level
+% down) and from course/dayNN/MN.N_module/ (two levels down).
+\graphicspath{{../_assets/}{../../_assets/}}
+\titlegraphic{\hfill\includegraphics[height=1.4cm]{logo-ec--en_black.png}}
+
+% --- typography -------------------------------------------------------------
+\setbeamerfont{block body}{size=\small}
+\setbeamerfont{footnote}{size=\tiny}

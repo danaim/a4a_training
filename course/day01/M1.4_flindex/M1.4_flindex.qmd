@@ -1,0 +1,183 @@
+---
+title: "FLIndex — survey and CPUE data"
+subtitle: "a4a Training Course — Module 1.4"
+author: "Danai Mantopoulou Palouka & Alessandro Ligas"
+date: today
+format:
+  # ---- standalone PDF: both the teaching slides and the handout -----------
+  beamer:
+    theme: metropolis
+    themeoptions:
+      - progressbar=frametitle
+      - numbering=fraction
+      - block=fill
+    aspectratio: 169
+    classoption: [t]
+    pdf-engine: xelatex
+    include-in-header: ../../_assets/a4a-beamer.tex
+    highlight-style: github
+    code-block-font-size: \scriptsize
+    # beamer frames do not scroll — keep figures short so they fit.
+    # Override per chunk with #| fig-height: when a plot needs more room.
+    fig-width: 8
+    fig-height: 2.8
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(FLCore)
+library(ggplotFL)
+
+# Build the demo index quietly, exactly as the hands-on script does.
+dd <- "../../_data/MUT_GSA32"
+idx.df  <- read.csv(file.path(dd, "index.csv"))
+idx.flq <- FLQuant(idx.df$data,
+                   dimnames = list(age = 1:10, year = 1998:2017))
+
+idx <- FLIndex(idx.flq)
+index(idx) <- idx.flq
+range(idx)["startf"] <- 6 / 12
+range(idx)["endf"]   <- 8 / 12
+name(idx) <- "MEDITS"
+desc(idx) <- "Medits in GSA 32"
+```
+
+## Why we need an index at all
+
+Catch data alone cannot tell you whether a small catch means
+
+- **few fish**, or
+- **little fishing**
+
+::: {.callout-warning title="The identification problem"}
+Catch $= F \times N$. One equation, two unknowns.
+
+A survey gives an independent look at $N$ — that is what breaks the tie.
+:::
+
+::: {.notes}
+This is the single most important idea in the module. If they take nothing
+else away: the index is what makes the assessment identifiable.
+:::
+
+## What an FLIndex holds
+
+Twelve slots — but you normally fill **very few**.
+
+| Slot | What it is |
+|:--|:--|
+| `index` | the abundance series, ages $\times$ years |
+| `index.var` | variance / weighting, optional |
+| `range` | ages, years, and **survey timing** |
+| `name`, `desc` | which survey is this |
+| `type`, `distribution` | metadata, rarely changed |
+| `catch.n`, `catch.wt`, `effort`, `sel.pattern`, `index.q` | usually left empty |
+
+For a standard a4a fit: **`index` plus `range`**.
+
+## The index is relative, not absolute
+
+The survey does not count every fish. It sees a **fraction** of them:
+
+$$I_{a,y} = q_a \cdot N_{a,y}$$
+
+- $q$ is **catchability** — the fraction the survey sees
+- The model estimates $q$; you only supply $I$
+
+::: {.callout-tip title="Which means"}
+The **units do not matter** and the absolute level does not matter.
+What matters is how the index changes **through time**.
+:::
+
+::: {.notes}
+Say plainly: do not rescale your index, do not worry that it is "too small".
+Trends are the signal. We configure the q submodel on Day 2 and Day 3.
+:::
+
+## `range` — and the two numbers people forget
+
+```{r}
+range(idx)[c("startf", "endf")]
+```
+
+The survey's start and end as a **fraction of the year** —
+June to August is `6/12` to `8/12`.
+
+::: {.callout-warning title="Why it matters"}
+They tell the model **how much mortality has already happened** when the
+survey sees the fish. Set them wrong and the index is compared against the
+population at the wrong moment.
+:::
+
+## Age-structured or biomass?
+
+| Class | Index is | Use when |
+|:--|:--|:--|
+| `FLIndex` | numbers **at age** | your survey is aged |
+| `FLIndexBiomass` | a **single** biomass series | no age data, e.g. acoustic |
+
+Same idea, same `range`, same survey timing.
+`FLIndexBiomass` simply has one row instead of ten.
+
+## One index or many
+
+`sca()` takes **`FLIndices`** or an `FLIndex`:
+
+```{r}
+#| eval: false
+idx  <- FLIndex(idx.flq)      # one survey
+
+# you can add more surveys
+idxs <- FLIndices(idx1 = idx, idx2 = idx)
+
+fit <- sca(stock = stk, indices = idxs)
+```
+
+::: {.callout-warning title="Some methods still require FLIndices()"}
+The safest option is to wrap even a single index in an `FLIndices` object.
+:::
+
+
+## Looking at it
+
+```{r}
+#| fig-height: 2.6
+plot(idx) + ggtitle(name(idx))
+```
+
+## Pitfalls worth knowing
+
+- **Zeros and NAs** are not the same. A true zero is information;
+  a missing survey year should be `NA`
+- **Do not rescale** to match catch — the model estimates $q$ for that
+- **One survey per `FLIndex`.** Two surveys means two objects in `FLIndices`
+- If the survey changed vessel or gear, you need to think if you need to split to two surveys
+
+## Summary
+
+- The index is what makes $F$ and $N$ separable
+- You normally fill only **`index`** and **`range`**
+- It is **relative**: trends matter, absolute level does not
+- `startf`/`endf` place the survey inside the year — set them
+
+
+Next: **Module 1.5 — putting stock and index together, and the first fit.**
+
+## Hands-on
+
+::: {.callout-tip title="Exercise"}
+Open `handson_M1.4_flindex.R` and build the MEDITS index for MUT GSA 32.
+
+1. Read `index.csv` and build the `FLQuant`
+2. Create the `FLIndex` and fill the `index` slot
+3. Set the survey timing, `name` and `desc`
+4. Plot it, and check its dimensions against the stock
+:::
+
+

@@ -1,0 +1,133 @@
+---
+title: "Module Title"
+subtitle: "a4a Training Course"
+author: "Danai Mantopoulou Palouka & Alessandro Ligas"
+date: today
+format:
+  # ---- standalone PDF: both the teaching slides and the handout -----------
+  beamer:
+    theme: metropolis
+    themeoptions:
+      - progressbar=frametitle
+      - numbering=fraction
+      - block=fill
+    aspectratio: 169
+    classoption: [t]
+    pdf-engine: xelatex
+    include-in-header: ../_assets/a4a-beamer.tex
+    highlight-style: github
+    code-block-font-size: \scriptsize
+    # beamer frames do not scroll — keep figures short so they fit.
+    # Override per chunk with #| fig-height: when a plot needs more room.
+    fig-width: 8
+    fig-height: 2.8
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(FLCore)
+library(FLa4a)
+library(ggplotFL)
+library(ggplot2)
+theme_set(theme_bw())
+```
+
+## Outline
+
+- Point 1
+- Point 2
+- Point 3
+
+::: {.notes}
+Speaker notes go here. These are not shown on the slide.
+:::
+
+## Main Content Slide
+
+Content here.
+
+### With a sub-heading
+
+More content.
+
+## Code Example
+
+```{r}
+#| label: example-code
+#| echo: true
+# Example R code
+data(ple4)
+plot(ple4)
+```
+
+## Key Message Slide
+
+::: {.callout-warning title="Key message"}
+**a4a has no process error** — residuals are the main tool for diagnosing model
+fit and guiding submodel configuration.
+:::
+
+## Exercise Slide
+
+::: {.callout-tip title="Exercise"}
+1. Load your own data
+2. Create an FLStock object
+3. Check the dimensions and units
+4. Plot the stock
+:::
+
+## Optional Geeky Stuff
+
+::: {.callout-note title="Optional Geeky Stuff"}
+Detailed mathematical content goes here.
+
+$$\mathbf{y} = \beta_0 + \beta_1\mathbf{x} + \epsilon$$
+
+Keep these slides at the end of the module so they can be shown or skipped
+without breaking the flow.
+:::
+
+## Two-Column Layout
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Left column**
+
+- Item 1
+- Item 2
+:::
+
+::: {.column width="50%"}
+```{r}
+#| eval: false
+# Code on the right
+sca(stk, idx)
+```
+:::
+
+:::
+
+## Summary
+
+- Takeaway 1
+- Takeaway 2
+- Takeaway 3
+
+## Hands-on Session
+
+Now it's your turn! Work on your own data.
+
+**Objectives for this session:**
+
+1. Objective 1
+2. Objective 2
+3. Objective 3
+
+Come back for questions at any time.

@@ -1,0 +1,17 @@
+# Third-party source material — not ours to redistribute
+sandbox/
+
+# Quarto / knitr build artefacts
+*_files/
+*.knit.md
+*.utf8.md
+/.quarto/
+
+# R session junk
+.Rhistory
+.RData
+.Rproj.user/
+Rplots.pdf
+
+# OS junk
+.DS_Store

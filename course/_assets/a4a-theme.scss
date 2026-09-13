@@ -1,0 +1,89 @@
+/*-- scss:defaults --*/
+
+// Colors
+$body-bg: #ffffff;
+$body-color: #333333;
+$link-color: #004494;
+$presentation-heading-color: #004494;
+
+// Fonts
+$font-family-sans-serif: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+$presentation-font-size-root: 32px;
+$presentation-h1-font-size: 1.6em;
+$presentation-h2-font-size: 1.3em;
+$presentation-h3-font-size: 1.1em;
+
+// Code
+$code-color: #c7254e;
+$code-block-font-size: 0.7em;
+
+/*-- scss:rules --*/
+
+// Title slide
+.reveal .slide.title-slide {
+  text-align: left;
+}
+
+// EC logo in footer
+.reveal .slide-logo {
+  max-height: 50px !important;
+}
+
+// Slide headers
+.reveal h2 {
+  border-bottom: 2px solid #004494;
+  padding-bottom: 0.3em;
+}
+
+// Geeky stuff callout
+.callout-geeky {
+  border-left: 4px solid #6c757d;
+  background-color: #f8f9fa;
+  padding: 1em;
+  margin: 1em 0;
+  font-size: 0.85em;
+}
+
+.callout-geeky::before {
+  content: "📎 Optional Geeky Stuff";
+  font-weight: bold;
+  display: block;
+  margin-bottom: 0.5em;
+  color: #6c757d;
+}
+
+// Key message boxes
+.key-message {
+  background-color: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 0.8em 1em;
+  margin: 0.5em 0;
+  font-weight: 500;
+}
+
+// Exercise boxes
+.exercise {
+  background-color: #d4edda;
+  border-left: 4px solid #28a745;
+  padding: 0.8em 1em;
+  margin: 0.5em 0;
+}
+
+.exercise::before {
+  content: "🏋️ Exercise";
+  font-weight: bold;
+  display: block;
+  margin-bottom: 0.3em;
+}
+
+// Smaller text helper
+.smaller {
+  font-size: 0.75em;
+}
+
+// Two-column layout
+.columns-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1em;
+}

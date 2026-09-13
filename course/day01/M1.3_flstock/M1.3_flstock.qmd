@@ -1,0 +1,277 @@
+---
+title: "FLStock — structure, slots and meaning"
+subtitle: "a4a Training Course — Module 1.3"
+author: "Danai Mantopoulou Palouka & Alessandro Ligas"
+date: today
+format:
+  # ---- standalone PDF: both the teaching slides and the handout -----------
+  beamer:
+    theme: metropolis
+    themeoptions:
+      - progressbar=frametitle
+      - numbering=fraction
+      - block=fill
+    aspectratio: 169
+    classoption: [t]
+    pdf-engine: xelatex
+    include-in-header: ../../_assets/a4a-beamer.tex
+    highlight-style: github
+    code-block-font-size: \scriptsize
+    # beamer frames do not scroll — keep figures short so they fit.
+    # Override per chunk with #| fig-height: when a plot needs more room.
+    fig-width: 8
+    fig-height: 2.8
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(FLCore)
+
+# Build the demo stock quietly so the slides can show real output.
+# This is exactly what the hands-on script does, step by step.
+dd <- "../../_data/MUT_GSA32"
+yrs <- 1998:2017
+ages <- 1:10
+fq <- function(x, units = "") FLQuant(x, dimnames = list(age = ages, year = yrs),
+                                      units = units)
+
+land    <- read.csv(file.path(dd, "landings.csv"))
+land.n  <- read.csv(file.path(dd, "landings_n.csv"))
+land.wt <- read.csv(file.path(dd, "landings_wt.csv"))
+disc    <- read.csv(file.path(dd, "discards.csv"))
+disc.n  <- read.csv(file.path(dd, "discards_n.csv"))
+disc.wt <- read.csv(file.path(dd, "discards_wt.csv"))
+stk.wt  <- read.csv(file.path(dd, "stock_wt.csv"))
+
+landings.flq    <- FLQuant(land$data, dimnames = list(age = "all", year = yrs), units = "t")
+landings.n.flq  <- fq(land.n$data,  "1000")
+landings.wt.flq <- fq(land.wt$data, "kg")
+discards.flq    <- FLQuant(disc$data, dimnames = list(age = "all", year = yrs), units = "t")
+discards.n.flq  <- fq(disc.n$data,  "1000")
+discards.wt.flq <- fq(disc.wt$data, "kg")
+stock.wt.flq    <- fq(stk.wt$data,  "kg")
+
+catch.flq   <- landings.flq + discards.flq
+catch.n.flq <- landings.n.flq + discards.n.flq
+catch.wt.flq <- (discards.n.flq / catch.n.flq) * discards.wt.flq +
+                (landings.n.flq / catch.n.flq) * landings.wt.flq
+
+m.flq      <- fq(0.1)
+mat.flq    <- fq(rep(c(0, 0.5, 0.5, rep(1, 7)), times = length(yrs)))
+m.spwn.flq <- fq(0)
+h.spwn.flq <- fq(0)
+
+stk <- FLStock(catch.n.flq)
+catch(stk) <- catch.flq;       catch.n(stk) <- catch.n.flq
+catch.wt(stk) <- catch.wt.flq
+landings(stk) <- landings.flq; landings.n(stk) <- landings.n.flq
+landings.wt(stk) <- landings.wt.flq
+discards(stk) <- discards.flq; discards.n(stk) <- discards.n.flq
+discards.wt(stk) <- discards.wt.flq
+stock.wt(stk) <- stock.wt.flq
+m(stk) <- m.flq; mat(stk) <- mat.flq
+m.spwn(stk) <- m.spwn.flq; harvest.spwn(stk) <- h.spwn.flq
+range(stk)["minfbar"] <- 2
+range(stk)["maxfbar"] <- 6
+name(stk) <- "MUT"
+desc(stk) <- "MUT in GSA32. WGSAD 2018"
+units(harvest(stk)) <- "f"
+```
+
+## What an FLStock is
+
+An **`FLStock`** is a container holding your whole perception of the stock.
+
+- **17 `FLQuant` slots** — all sharing the same ages and years
+- plus `name`, `desc` and `range`
+
+::: {.callout-tip title="Nothing new to learn"}
+Every slot is an `FLQuant`, exactly as in Module 1.2.
+An `FLStock` is just a labelled box of them.
+:::
+
+::: {.notes}
+Stress the "same shape" point: if one slot has different dimensions from the
+rest, the object will not validate. That is a feature, not an obstacle.
+:::
+
+## The 20 slots, grouped
+
+| Group | Slots |
+|:--|:--|
+| Catch | `catch`, `catch.n`, `catch.wt` |
+| Landings | `landings`, `landings.n`, `landings.wt` |
+| Discards | `discards`, `discards.n`, `discards.wt` |
+| Biology | `m`, `mat`, `m.spwn`, `harvest.spwn` |
+| Population | `stock`, `stock.n`, `stock.wt` |
+| Exploitation | `harvest` |
+| Metadata | `name`, `desc`, `range` |
+
+## The pattern: total, numbers, weight
+
+Catch, landings and discards each come as **three** slots:
+
+| Slot | Meaning | Dimensions | Units |
+|:--|:--|:--|:--|
+| `catch` | total weight landed + discarded | 1 $\times$ years | `t` |
+| `catch.n` | numbers **at age** | ages $\times$ years | `1000` |
+| `catch.wt` | mean weight **at age** | ages $\times$ years | `kg` |
+
+Note the first one is a **single row** (`age = "all"`), not a matrix.
+
+::: {.notes}
+This trips people up: catch is a time series, catch.n and catch.wt are
+matrices. Same for landings and discards.
+:::
+
+## Biology — what you must supply
+
+| Slot | Meaning | Typical |
+|:--|:--|:--|
+| `m` | natural mortality at age | assumed, e.g. 0.1 |
+| `mat` | proportion mature at age | 0 → 1 ogive |
+| `m.spwn` | fraction of **M** before spawning | 0 |
+| `harvest.spwn` | fraction of **F** before spawning | 0 |
+
+`m.spwn` and `harvest.spwn` say *how far into the year* spawning happens.
+Both 0 means spawning on 1 January.
+
+## Population and exploitation — what the model gives back
+
+| Slot | Meaning | Who fills it |
+|:--|:--|:--|
+| `stock.wt` | mean weight at age in the stock | **you** |
+| `stock.n` | numbers at age in the stock | the model |
+| `stock` | total stock biomass | the model |
+| `harvest` | fishing mortality at age | the model |
+
+::: {.callout-warning title="The key distinction"}
+You supply **14** of the 17 `FLQuant` slots.
+`stock`, `stock.n` and `harvest` are what `sca()` **estimates** —
+leave them empty.
+:::
+
+## `range` — seven numbers that matter
+
+```{r}
+range(stk)
+```
+
+- `min`, `max`, `plusgroup` — the age structure
+- `minyear`, `maxyear` — the time span
+- `minfbar`, `maxfbar` — **which ages are averaged** to report $\bar{F}$
+
+::: {.notes}
+minfbar/maxfbar are a choice, not data. They change the F you report without
+changing the fit at all. Ask them what their assessment uses.
+:::
+
+## Metadata is not decoration
+
+```{r}
+name(stk)
+desc(stk)
+```
+
+Six months from now, this is how you know which run you are looking at.
+
+## Consistency: the model trusts you
+
+Nothing checks that your slots agree with each other. You must ensure:
+
+```{r}
+#| eval: false
+catch.n  == landings.n  + discards.n
+catch    == landings    + discards
+```
+
+And `catch.wt` is the **catch-weighted** mean of the two:
+
+```{r}
+#| eval: false
+catch.wt <- (discards.n / catch.n) * discards.wt +
+            (landings.n / catch.n) * landings.wt
+```
+
+::: {.callout-warning title="Not a plain average"}
+Averaging `landings.wt` and `discards.wt` directly is wrong —
+discards are small fish, and there are usually many more of them.
+:::
+
+## A trap worth knowing
+
+`FLQuant` matches `dimnames` **by name**, not by position:
+
+```{r}
+#| eval: false
+# year written first, but you still get ages x years
+FLQuant(x, dimnames = list(year = 1998:2017, age = 1:10))
+```
+
+That works. But the **values** fill in array order — quant first.
+
+::: {.callout-warning title="So"}
+This only gives the right answer because the CSV is sorted **age within year**.
+A year-major file produces a silently **transposed** matrix, with no error.
+
+Always spot-check one value: `flq["3", "2005"]` against the raw file.
+:::
+
+## Checking your object
+
+```{r}
+#| eval: false
+summary(stk)      # dimensions and ranges, slot by slot
+plot(stk)         # the four-panel overview
+units(stk)        # are the units what you think?
+validObject(stk)  # does it satisfy the class definition?
+verify(stk)       # FLCore's sanity checks
+```
+
+::: {.notes}
+verify() is the one they will not know about. It catches negative catches,
+maturity outside 0-1, and similar. Demonstrate it live on Day 1 if there is
+time, otherwise it reappears in M1.5 with their own data.
+:::
+
+## Summary
+
+- An `FLStock` is **17 `FLQuant`s** plus `name`, `desc`, `range`
+- Totals are `1 x years`; numbers and weights are `ages x years`
+- You supply **14**; `stock`, `stock.n`, `harvest` come from the model
+- `range` carries the **fbar ages** — a choice you must make
+- Nothing enforces internal consistency: **that is your job**
+
+Next: **Module 1.4 — `FLIndex`, the survey side of the data.**
+
+## Hands-on
+
+::: {.callout-tip title="Exercise"}
+Open `handson_M1.3_flstock.R` and build the MUT GSA32 stock from CSV files.
+
+1. Read each file and turn it into an `FLQuant`
+2. Derive `catch`, `catch.n` and `catch.wt` from landings and discards
+3. Fill the biology slots
+4. Assemble the `FLStock`, then set `range`, `name`, `desc` and `units`
+5. Plot it
+:::
+
+## Optional Geeky Stuff
+
+::: {.callout-note title="Why a class and not a list?"}
+`FLStock` is an S4 class with a **validity function**. Every assignment
+through an accessor re-checks it:
+
+- all `FLQuant` slots must share the same `year` and `iter` dimensions
+- the quant dimension must match, except for the `1 x years` totals
+
+So `catch.n(stk) <- wrong_shape` fails **immediately**, at the line that
+caused it — rather than fifty lines later inside `sca()`, where the error
+message would tell you nothing useful.
+:::

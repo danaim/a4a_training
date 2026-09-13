@@ -1,0 +1,221 @@
+---
+title: "Inspecting, manipulating and visualising"
+subtitle: "a4a Training Course — Module 1.6"
+author: "Danai Mantopoulou Palouka & Alessandro Ligas"
+date: today
+format:
+  # ---- standalone PDF: both the teaching slides and the handout -----------
+  beamer:
+    theme: metropolis
+    themeoptions:
+      - progressbar=frametitle
+      - numbering=fraction
+      - block=fill
+    aspectratio: 169
+    classoption: [t]
+    pdf-engine: xelatex
+    include-in-header: ../../_assets/a4a-beamer.tex
+    highlight-style: github
+    code-block-font-size: \scriptsize
+    # beamer frames do not scroll — keep figures short so they fit.
+    # Override per chunk with #| fig-height: when a plot needs more room.
+    fig-width: 8
+    fig-height: 2.8
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(FLCore)
+library(FLa4a)
+library(ggplotFL)
+library(patchwork)
+theme_set(theme_bw())
+
+# The MUT stock you built this morning, fitted, so the estimated slots
+# are populated and the plots have something to show.
+dd <- "../../_data/MUT_GSA32"
+yrs <- 1998:2017; ages <- 1:10
+rd <- function(f) read.csv(file.path(dd, f))
+fq <- function(x, u = "") FLQuant(x, dimnames = list(age = ages, year = yrs), units = u)
+tot <- function(x) FLQuant(x, dimnames = list(age = "all", year = yrs), units = "t")
+
+ln <- fq(rd("landings_n.csv")$data, "1000"); lw <- fq(rd("landings_wt.csv")$data, "kg")
+dn <- fq(rd("discards_n.csv")$data, "1000"); dw <- fq(rd("discards_wt.csv")$data, "kg")
+cn <- ln + dn
+stk <- FLStock(cn)
+catch.n(stk) <- cn; catch(stk) <- tot(rd("landings.csv")$data) + tot(rd("discards.csv")$data)
+catch.wt(stk) <- (dn / cn) * dw + (ln / cn) * lw
+landings(stk) <- tot(rd("landings.csv")$data); landings.n(stk) <- ln; landings.wt(stk) <- lw
+discards(stk) <- tot(rd("discards.csv")$data); discards.n(stk) <- dn; discards.wt(stk) <- dw
+stock.wt(stk) <- fq(rd("stock_wt.csv")$data, "kg")
+m(stk) <- fq(0.1, "m"); mat(stk) <- fq(c(0, 0.5, 0.5, rep(1, 7)))
+m.spwn(stk) <- fq(0); harvest.spwn(stk) <- fq(0)
+range(stk)[c("minfbar", "maxfbar")] <- c(2, 6)
+name(stk) <- "MUT"; units(harvest(stk)) <- "f"
+
+idx <- FLIndex(fq(rd("index.csv")$data))
+index(idx) <- fq(rd("index.csv")$data)
+range(idx)[c("startf", "endf")] <- c(6/12, 8/12)
+name(idx) <- "MEDITS"
+
+fit <- sca(stk, FLIndices(MEDITS = idx))
+stk.fit <- stk + fit
+```
+
+## Three ways to look at an object
+
+| Way | Use it for |
+|:--|:--|
+| `summary()`, `print()` | dimensions, ranges, units — the quick check |
+| `plot()` | the standard overview, one line |
+| `as.data.frame()` $\to$ `ggplot()` | anything you want, exactly how you want it |
+
+The first two are free. The third is where you spend your time when
+building a report.
+
+## `metrics()` — the numbers people ask for
+
+```{r}
+names(metrics(stk.fit))
+```
+
+Each is a method you can also call directly:
+
+```{r}
+#| eval: false
+ssb(stk)   rec(stk)   fbar(stk)   catch(stk)
+tsb(stk)   vb(stk)    fapex(stk)  sp(stk)
+```
+
+::: {.notes}
+sp() is surplus production — useful on Day 5 when we talk about production
+and reference points. Do not dwell here.
+:::
+
+## `plot()` is a method, not a function
+
+One name, different behaviour per class:
+
+```{r}
+#| eval: false
+plot(flq)          # an FLQuant   — a single time series
+plot(stk)          # an FLStock   — the four-panel overview
+plot(idx)          # an FLIndex   — index by age
+plot(FLStocks(...)) # several stocks — overlaid for comparison
+```
+
+Remember Module 1.1: `getMethod("plot", list("FLStock", "missing"))`
+shows you exactly what it does.
+
+## The four-panel default
+
+```{r}
+#| fig-height: 2.7
+plot(stk.fit)
+```
+
+## Change what it shows
+
+The default came from that method's `metrics` argument — so override it:
+
+```{r}
+#| fig-height: 1.9
+plot(stk.fit, metrics = list(SSB = ssb, `bar(F)` = fbar))
+```
+
+::: {.callout-warning title="Panel names are plotmath — no spaces"}
+`Mean F` errors. `Fbar` works. `` `bar(F)` `` renders as $\bar{F}$.
+:::
+
+## Comparing runs
+
+`FLStocks` is how you put two assessments side by side:
+
+```{r}
+#| fig-height: 2.5
+plot(FLStocks(input = stk, fitted = stk.fit))
+```
+
+::: {.notes}
+This is the plot they will use all week: base run vs new configuration.
+:::
+
+## The escape hatch: `as.data.frame()`
+
+Every FLR object converts to a long data.frame:
+
+```{r}
+head(as.data.frame(catch.n(stk)), 3)
+```
+
+From here it is ordinary `ggplot2` — `data`, `year`, `age` are just columns.
+
+## Bubble plots {.shrink}
+
+Size by value, split by age and year:
+
+```{r}
+#| fig-height: 1.8
+ggplot(catch.n(stk), aes(year, factor(age), size = data)) +
+  geom_point(shape = 21) + labs(y = "age", size = "catch.n")
+```
+
+
+
+## Cohorts
+
+```{r}
+#| fig-height: 2.2
+ggplot(stock.n(stk.fit), aes(year, data, colour = factor(age))) +
+  geom_line() + scale_y_log10() + labs(colour = "age") +
+  guides(colour = guide_legend(ncol = 2))
+```
+
+Following a strong year class is a quick sanity check on the assessment.
+
+## Assembling figures
+
+`patchwork` combines any ggplots with `+`, `/` and `|`:
+
+```{r}
+#| eval: false
+p1 <- plot(ssb(stk.fit)) + ggtitle("SSB")
+p2 <- plot(fbar(stk.fit)) + ggtitle("Mean F")
+
+(p1 | p2) / plot(rec(stk.fit))
+```
+
+Useful on Day 5, when everything has to fit on one page.
+
+## Summary
+
+- `summary()` for the check, `plot()` for the overview
+- `metrics()` gives the standard quantities; each is also a method
+- `plot()` takes a **`metrics` argument** — you choose the panels
+- `FLStocks()` compares runs; you will use it constantly
+- `as.data.frame()` then `ggplot2` for everything else
+
+::: {.callout-tip title="That is Day 1"}
+Your data is in FLR, checked, and fitted.
+Tomorrow we start asking whether the fit is any good.
+:::
+
+## Hands-on
+
+::: {.callout-tip title="Exercise"}
+Open `handson_M1.6_visualisation.R`.
+
+1. `summary`, `units`, `metrics` and the individual methods
+2. Subset and trim: `window()`, `trim()`, `[`
+3. `plot()` per class, change its `metrics`, then **write your own metric**
+4. `FLQuants`, faceting, log scales, and a 3D `wireframe`
+5. `as.data.frame()` → bubbles, boxplots, cohorts
+6. `geom_flpar` for reference points, and `cohcorrplot`
+7. Assemble with `patchwork` and save to file
+:::

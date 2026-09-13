@@ -1,0 +1,193 @@
+---
+title: "FLQuant — the building block"
+subtitle: "a4a Training Course — Module 1.2"
+author: "Danai Mantopoulou Palouka & Alessandro Ligas"
+date: today
+format:
+  # ---- standalone PDF: both the teaching slides and the handout -----------
+  beamer:
+    theme: metropolis
+    themeoptions:
+      - progressbar=frametitle
+      - numbering=fraction
+      - block=fill
+    aspectratio: 169
+    classoption: [t]
+    pdf-engine: xelatex
+    include-in-header: ../../_assets/a4a-beamer.tex
+    highlight-style: github
+    code-block-font-size: \scriptsize
+    # beamer frames do not scroll — keep figures short so they fit.
+    # Override per chunk with #| fig-height: when a plot needs more room.
+    fig-width: 8
+    fig-height: 2.8
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(FLCore)
+```
+
+## The one class to understand
+
+All data in FLR live inside an **`FLQuant`**.
+
+- Catch numbers at age
+- Weights at age
+- Natural mortality, maturity
+- Survey indices
+
+::: {.callout-tip title="Why we start here"}
+`FLQuant` is not one more class to learn — it is **the** class.
+Everything we build for the rest of the week is made of these.
+:::
+
+::: {.notes}
+Twenty minutes on this pays for itself all week. If the shape of an FLQuant is
+clear, the objects built from them stop being mysterious.
+:::
+
+## An FLQuant is always six-dimensional
+
+| Dimension | What it holds | Usual value |
+|:--|:--|:--|
+| `quant` | age, length, … | `age` |
+| `year` | time | your year range |
+| `unit` | sex or stock component | `unique` |
+| `season` | within-year structure | `all` |
+| `area` | spatial strata | `unique` |
+| `iter` | iterations | `1` |
+
+Most of the time you only care about the **first two** and when we visit `simulate()` we will inspect the `iter`
+
+## Even an empty one has six dimensions
+
+```{r}
+dim(FLQuant())
+```
+
+The first dimension is the flexible one — hence the name `quant`:
+
+```{r}
+names(dimnames(FLQuant(dimnames = list(length = c(10, 20, 30)))))
+```
+
+::: {.notes}
+This is the single most common source of confusion: people expect a 2D matrix
+and get six dimensions. Say clearly that four of them are usually degenerate.
+:::
+
+## Creating one — from a vector {.shrink}
+
+Values fill **down the quant first**, then across years.
+
+```{r}
+FLQuant(1:6, dimnames = list(age = 1:3, year = 2000:2001), units = "kg")
+```
+
+## Creating one — other ways
+
+```{r}
+#| eval: false
+FLQuant()                                       # empty, 1x1x1x1x1x1
+FLQuant(0.2, dimnames = list(age = 1:2))        # one value, recycled
+FLQuant(matrix(1:6, nrow = 3), quant = "age")   # from a matrix
+FLQuant(array(rlnorm(100), dim = c(10, 5, 2)))  # from an array
+as.FLQuant(df)                                  # from a data.frame
+```
+
+::: {.callout-tip title="The usual route from your own data"}
+`read.csv()` → `as.matrix()` → `FLQuant()`
+
+That is exactly what we do in Module 1.5 with your files.
+:::
+
+## Data and metadata travel together
+
+```{r}
+flq <- FLQuant(1:6, 
+    dimnames = list(age = 1:3, year = 2000:2001), 
+    units = "kg")
+dim(flq)
+dimnames(flq)$year
+units(flq)
+```
+
+
+## FLQuant() can handle (most of the times) units:
+
+```{r}
+n <- FLQuant(1000, units = "1000")   # numbers, in thousands
+w <- FLQuant(0.5,  units = "kg")     # mean weight
+
+units(n * w)
+```
+
+FLR does the unit algebra for you: thousands $\times$ kg $=$ **tonnes**.
+
+::: {.callout-warning title="Which means"}
+If your units are wrong, the arithmetic is still wrong —
+it just fails **quietly**. Set them when you build the object.
+:::
+
+## Two things that catch everybody
+
+**1. Dimnames are character, not numbers**
+
+```{r}
+dimnames(flq)$year
+```
+
+So subset by label, `flq[, "2000"]`, or by position, `flq[, 1]` —
+but `flq[, 2000]` is out of bounds.
+
+**2. Dimensions are not dropped by default**
+
+`flq[1, ]` is still a full 6D `FLQuant`. Use `drop = TRUE` to get a plain vector.
+
+## The FLQuant toolset
+
+\begin{center}
+\includegraphics[keepaspectratio, height=0.88\textheight]{flquant.png}
+\end{center}
+
+## Summary
+
+- One class, **six dimensions** — you mostly use the first two
+- `quant` is flexible: `age`, `length`, whatever you need
+- Carries **dimnames and units**, not just numbers
+- Units are checked and combined by FLR — set them correctly
+- Dimnames are **character**; dimensions are **not dropped**
+
+Next: **Module 1.3 — `FLStock`, built entirely out of `FLQuant`s.**
+
+## Hands-on
+
+::: {.callout-tip title="Exercise"}
+Open `handson_M1.2_flquant.R` and work through it.
+
+1. Create `FLQuant`s from a value, a vector and a matrix
+2. Inspect `dim`, `dimnames` and `units`
+3. Arithmetic: what conforms, what does not, and when to use `%*%`
+4. Summaries: `quantSums`, `yearMeans`, geometric mean
+5. Reproduce a target object from its printed output
+:::
+
+## Optional Geeky Stuff
+
+::: {.callout-note title="Why six dimensions?"}
+An `FLQuant` extends R's `array`, with a fixed dimension order:
+
+`quant` $\times$ `year` $\times$ `unit` $\times$ `season` $\times$ `area` $\times$ `iter`
+
+Fixing the order is what lets every FLR package agree on what it is
+being handed — the "common currency" from Module 1.1.
+
+The 6th dimension, `iter`, stays at 1 all week until **Day 4**, where uncertainty is propagated through it.
+:::
