@@ -1,0 +1,144 @@
+---
+title: "Reading residuals"
+subtitle: "a4a Training Course — Module 2.2"
+author: "Danai Mantopoulou Palouka & Alessandro Ligas"
+date: today
+format:
+  # ---- standalone PDF: both the teaching slides and the handout -----------
+  beamer:
+    theme: metropolis
+    themeoptions:
+      - progressbar=frametitle
+      - numbering=fraction
+      - block=fill
+    aspectratio: 169
+    classoption: [t]
+    pdf-engine: xelatex
+    include-in-header: ../../_assets/a4a-beamer.tex
+    highlight-style: github
+    code-block-font-size: \scriptsize
+    # beamer frames do not scroll — keep figures short so they fit.
+    # Override per chunk with #| fig-height: when a plot needs more room.
+    fig-width: 8
+    fig-height: 2.8
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(FLCore)
+library(FLa4a)
+library(ggplotFL)
+library(lattice)
+library(latticeExtra)
+lattice.options(default.args = list(as.table = TRUE))
+
+data(mut09)
+data(mut09.idx)
+stk <- mut09
+idx <- mut09.idx
+
+fit01 <- sca(stk, idx,
+             fmodel  = ~1,
+             qmodel  = list(~1),
+             srmodel = ~1,
+             vmodel  = list(~1, ~1),
+             n1model = ~1)
+
+res <- residuals(fit01, stk, idx)
+```
+
+## Why this module exists
+
+::: {.callout-warning title="Residuals are your main tool to manage your fit"}
+If you cannot read them, you
+cannot configure the model.
+:::
+
+We stay on the mean model from Module 2.1 — a fit we already know is bad —
+and learn what each tool can show us.
+
+## Three kinds of residual
+
+| Type | Divided by | 
+|:--|:--|
+| `deviances` | nothing — the raw log difference |
+| `standardized` | the **residual** standard deviation | 
+| `pearson` | the model's **predicted** square root variance | 
+
+With `vmodel = ~1` the variance is one constant, so pearson and standardized
+look alike.
+
+## Each tool answers a different question
+
+| Tool | Question |
+|:--|:--|
+| `plot(res)` | does the fit drift through **time**? |
+| `plot(res, by="age")` | is it off at particular **ages**? |
+| `bubbles(res)` | same but with bubbles :-) |
+| `qqmath(res)` | is the **error distribution** right? |
+| `plot(fit, stk)` & `plot(fit, idx)`| check differences in patterns |
+| `fitSumm(fit)` | number of parameters VS observations |
+
+Look by year **and** by age, every time. A pattern invisible in one view is
+often obvious in the other.
+
+## Rows, columns, diagonals
+
+```{r}
+#| fig-height: 2.9
+bubbles(res)
+```
+
+
+## Does it reproduce the catch? {.shrink}
+
+Everything so far was **at age**. This asks the blunter question, on
+aggregated catch in weight.
+
+```{r}
+#| fig-height: 2.2
+cd <- computeCatchDiagnostics(fit01, stk)
+plot(cd, type = "prediction", probs = c(0.025, 0.975))
+```
+
+The observed catch sits well below the predicted interval — the mean model
+does not reproduce it at all.
+
+::: {.notes}
+plot(cd) on its own gives the full residual panel — a square multi-panel
+figure, better shown live than on a slide. The message here is that a model
+can look tidy at age and still miss total catch, which is the number
+everyone in the room recognises.
+:::
+
+## Two cautions before you start
+
+::: {.callout-warning title="Check these every time"}
+`convergence` must be **0** in `fitSumm()`. Anything else and the rest of
+the output is meaningless.
+
+`AIC` and `BIC` only compare models fitted to the **same data** — never
+across stocks or across different year/age ranges.
+:::
+
+Now go and look at a bad model properly.
+
+## Hands-on
+
+::: {.callout-tip title="Exercise"}
+Open `handson_M2.2_residuals.R`.
+
+1. Compute all three residual types and compare their spread
+2. Work through `plot`, `bubbles`, `qqmath`, `plot(fit, stk)`
+3. Build the catch diagnostics
+4. Decide, from the evidence, what you would change first
+
+Then try it: refit with an age effect on F and see whether the thing you
+expected to improve actually did.
+:::
