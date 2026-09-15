@@ -1,0 +1,195 @@
+---
+title: "Adding age effects"
+subtitle: "a4a Training Course — Module 2.3"
+author: "Danai Mantopoulou Palouka & Alessandro Ligas"
+date: today
+format:
+  # ---- standalone PDF: both the teaching slides and the handout -----------
+  beamer:
+    theme: metropolis
+    themeoptions:
+      - progressbar=frametitle
+      - numbering=fraction
+      - block=fill
+    aspectratio: 169
+    classoption: [t]
+    pdf-engine: xelatex
+    include-in-header: ../../_assets/a4a-beamer.tex
+    highlight-style: github
+    code-block-font-size: \scriptsize
+    # beamer frames do not scroll — keep figures short so they fit.
+    # Override per chunk with #| fig-height: when a plot needs more room.
+    fig-width: 8
+    fig-height: 2.8
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(FLCore)
+library(FLa4a)
+library(ggplotFL)
+library(lattice)
+library(latticeExtra)
+lattice.options(default.args = list(as.table = TRUE))
+
+data(mut09)
+data(mut09.idx)
+stk <- mut09
+idx <- mut09.idx
+
+ff <- function(...) sca(stk, idx, srmodel = ~1, vmodel = list(~1, ~1),
+                        n1model = ~1, ...)
+
+fit01 <- ff(fmodel = ~1,           qmodel = list(~1))
+fit02 <- ff(fmodel = ~factor(age), qmodel = list(~1))
+fit03 <- ff(fmodel = ~1,           qmodel = list(~factor(age)))
+fit04 <- ff(fmodel = ~factor(age), qmodel = list(~factor(age)))
+
+res02 <- residuals(fit02, stk, idx)
+res03 <- residuals(fit03, stk, idx)
+res04 <- residuals(fit04, stk, idx)
+```
+
+## The signal we are answering
+
+The mean model left a clear **age** pattern in both data sources.
+
+::: {.callout-tip title="The method"}
+Explore the age effect on $F$ and on $q$ **in isolation**, then bring them
+together. Change one thing, refit, look at the residuals again.
+:::
+
+The procedure is carried by the residuals: in a well specified model they
+should show no trend and no large outliers.
+
+## An age effect on F
+
+```{r}
+#| eval: false
+fit02 <- sca(stk, idx,
+             fmodel  = ~factor(age),   # <- was ~1
+             qmodel  = list(~1),
+             srmodel = ~1, vmodel = list(~1, ~1), n1model = ~1)
+```
+
+`factor(age)` means **as many parameters as ages**, each one
+independent of the others.
+
+The catch-at-age residuals become less staggered, reflecting the age effect.
+The year trends are still there, but the average residual **by age** is now
+much closer to 0.
+
+## Age effect on F — residuals by year
+
+```{r}
+#| echo: false
+#| fig-height: 3.0
+plot(res02)
+```
+
+## Age effect on F — residuals by age
+
+```{r}
+#| echo: false
+#| fig-height: 3.0
+plot(res02, auxline = "l", by = "age")
+```
+
+## An age effect on q instead
+
+Now add the age effect to the catchability submodel, and **remove** it from
+the catch.
+
+```{r}
+#| eval: false
+fit03 <- sca(stk, idx,
+             fmodel  = ~1,
+             qmodel  = list(~factor(age)),   # <- was ~1
+             srmodel = ~1, vmodel = list(~1, ~1), n1model = ~1)
+```
+
+## Age effect on q — residuals by year
+
+```{r}
+#| echo: false
+#| fig-height: 3.0
+plot(res03)
+```
+
+## Age effect on q — residuals by age
+
+```{r}
+#| echo: false
+#| fig-height: 3.0
+plot(res03, auxline = "l", by = "age")
+```
+
+## Both together
+
+```{r}
+#| eval: false
+fit04 <- sca(stk, idx,
+             fmodel = ~factor(age), qmodel = list(~factor(age)),
+             srmodel = ~1, vmodel = list(~1, ~1), n1model = ~1)
+```
+
+Finally the two effects are brought together.
+
+## Both effects — residuals by year
+
+```{r}
+#| echo: false
+#| fig-height: 3.0
+plot(res04)
+```
+
+## Both effects — residuals by age
+
+```{r}
+#| echo: false
+#| fig-height: 3.0
+plot(res04, auxline = "l", by = "age")
+```
+
+## Now look at what it estimated
+
+```{r}
+#| echo: false
+s4 <- stk + fit04
+c(fbar = max(c(fbar(s4))), ssb = max(c(ssb(s4))))
+```
+
+::: {.callout-warning title="Converged, clean residuals, and nonsense"}
+$\bar{F} \approx 5\times10^{-15}$ and SSB $\approx 3\times10^{17}$ tonnes:
+no fishing at all, on an impossibly heavy stock.
+:::
+
+Residuals tell you whether the model reproduces the **data**. They cannot
+tell you whether the answer is **possible**. Always look at $\bar{F}$, SSB
+and recruitment as well.
+
+Adding a year effect to $F$ — next module — brings $\bar{F}$ back to 0.6–2.8.
+
+## Summary
+
+- Explore the age effect on $F$ and on $q$ **separately**, then together
+- `factor(age)` = one free parameter per age, independent of its neighbours
+- On $F$: the catch residuals are less staggered and centre on 0 by age
+- The year trends remain — that is Module 2.4
+- **Check $\bar{F}$ and SSB before you believe any residual plot**
+
+## Hands-on
+
+::: {.callout-tip title="Exercise"}
+Open `handson_M2.3_age_effects.R`.
+
+1. Fit `fit02`, `fit03` and `fit04`
+2. Plot the residuals of each **by year and by age**
+3. Compare the fitted stocks with `FLStocks()`
+:::

@@ -1,0 +1,207 @@
+---
+title: "Adding year effects"
+subtitle: "a4a Training Course — Module 2.4"
+author: "Danai Mantopoulou Palouka & Alessandro Ligas"
+date: today
+format:
+  # ---- standalone PDF: both the teaching slides and the handout -----------
+  beamer:
+    theme: metropolis
+    themeoptions:
+      - progressbar=frametitle
+      - numbering=fraction
+      - block=fill
+    aspectratio: 169
+    classoption: [t]
+    pdf-engine: xelatex
+    include-in-header: ../../_assets/a4a-beamer.tex
+    highlight-style: github
+    code-block-font-size: \scriptsize
+    # beamer frames do not scroll — keep figures short so they fit.
+    # Override per chunk with #| fig-height: when a plot needs more room.
+    fig-width: 8
+    fig-height: 2.8
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(FLCore)
+library(FLa4a)
+library(ggplotFL)
+library(lattice)
+library(latticeExtra)
+lattice.options(default.args = list(as.table = TRUE))
+
+data(mut09)
+data(mut09.idx)
+stk <- mut09
+idx <- mut09.idx
+
+f <- function(...) sca(stk, idx, ...)
+
+# where Module 2.3 left off: both age effects, no year effect
+fit04 <- f(fmodel = ~factor(age),                qmodel = list(~factor(age)),
+           srmodel = ~1, vmodel = list(~1, ~1),  n1model = ~1)
+fit05 <- f(fmodel = ~factor(age) + factor(year), qmodel = list(~1),
+           srmodel = ~1, vmodel = list(~1, ~1),  n1model = ~1)
+fit06 <- f(fmodel = ~factor(age) + factor(year), qmodel = list(~factor(age)),
+           srmodel = ~1, vmodel = list(~1, ~1),  n1model = ~factor(age))
+fit07 <- f(fmodel = ~factor(age) + factor(year), qmodel = list(~factor(age)),
+           srmodel = ~factor(year), vmodel = list(~1, ~1), n1model = ~factor(age))
+
+res05 <- residuals(fit05, stk, idx)
+res06 <- residuals(fit06, stk, idx)
+res07 <- residuals(fit07, stk, idx)
+```
+
+## A year effect on F
+
+The last set of residuals showed a clear pattern **across years** — more
+positive early in the series, more negative in the recent years. As for age,
+we answer it with a `factor`.
+
+```{r}
+#| eval: false
+fit05 <- sca(stk, idx,
+             fmodel = ~factor(age) + factor(year),   # <- year added
+             qmodel = list(~1),
+             srmodel = ~1, vmodel = list(~1, ~1), n1model = ~1)
+```
+
+::: {.callout-tip title="And the scale is pinned down"}
+```{r}
+#| echo: false
+round(range(c(fbar(stk + fit05))), 2)
+```
+$\bar{F}$ is a real number again, not $10^{-15}$. Letting $F$ move through
+time is what fixes the degeneracy from Module 2.3.
+:::
+
+## Year effect on F — residuals by year
+
+```{r}
+#| echo: false
+#| fig-height: 3.0
+plot(res05)
+```
+
+## Year effect on F — residuals by age
+
+```{r}
+#| echo: false
+#| fig-height: 2.3
+plot(res05, auxline = "l", by = "age")
+```
+
+::: {.callout-note title="Not finished"}
+Much less pattern than before — but the survey catchability still looks like
+it has a year trend, and recruitment, $N_1$ and the variances are all still
+constants.
+:::
+
+## Why we do **not** add year effects to q
+
+A well-designed scientific survey should see abundance change because
+**abundance changed**.
+
+::: {.callout-warning title="Modelling a year trend in q"}
+…attributes that change to the **survey design** instead, and removes it
+from the abundance. Think carefully before you do it.
+:::
+
+The exception is a **commercial CPUE**, where changes in selectivity or
+fishing behaviour really can enter the index — although standardisation
+should have dealt with the technical part.
+
+The formulas are the same ones: period breaks, trends, and so on.
+
+## The initial population, N1
+
+The first year has no earlier data to reconstruct its cohorts from, so
+`n1model` sets the numbers at age in year 1.
+
+```{r}
+#| eval: false
+fit06 <- sca(stk, idx,
+             fmodel  = ~factor(age) + factor(year),
+             qmodel  = list(~factor(age)),
+             srmodel = ~1, vmodel = list(~1, ~1),
+             # <- was ~1
+             n1model = ~factor(age))
+```
+
+It affects the **lower triangle** of the population matrix — the early years
+— and the catches there. So zoom into the start of the series to see it.
+
+## N1 as an intercept: 2003–2010 by age
+
+```{r}
+#| echo: false
+#| fig-height: 3.0
+plot(window(res05, end = 2010), auxline = "l", by = "age")
+```
+
+## N1 with an age effect: 2003–2010 by age
+
+```{r}
+#| echo: false
+#| fig-height: 3.0
+plot(window(res06, end = 2010), auxline = "l", by = "age")
+```
+
+Catch and survey residuals both improve considerably. The following years
+improve too, to different degrees.
+
+## The stock-recruitment submodel {.shrink}
+
+Constant recruitment is a strong assumption. Let it vary over time:
+
+```{r}
+#| eval: false
+fit07 <- sca(stk, idx,
+             fmodel  = ~factor(age) + factor(year),
+             qmodel  = list(~factor(age)),
+             # <- was ~1
+             srmodel = ~factor(year),
+             vmodel  = list(~1, ~1), n1model = ~factor(age))
+```
+
+::: {.callout-tip title="Why it matters everywhere"}
+Unmodelled recruitment variability does not stay put: it was being picked up
+as a **trend in the survey catchability**, and cohort dynamics carried it
+into the other ages.
+:::
+
+## Recruitment varying — residuals by year
+
+```{r}
+#| echo: false
+#| fig-height: 3.0
+plot(res07)
+```
+
+The year trends present in the previous models are gone.
+
+## Summary
+
+- A year effect on $F$ **breaks the scale degeneracy** from Module 2.3
+- Do **not** put year trends in $q$ for a scientific survey — think first
+- `n1model` fixes the **early years**, propagating along cohorts
+- `srmodel` lets recruitment vary; unmodelled, it contaminates $q$ and the catch
+- Each step was driven by **what the residuals showed**, one change at a time
+
+## Hands-on
+
+::: {.callout-tip title="Exercise"}
+Open `handson_M2.4_year_effects.R`.
+
+1. Add the year effect and check `fbar` is sensible again
+2. Add `n1model`, and compare the early years before and after
+3. Add `srmodel`, and watch the year trends leave the survey residuals
+:::
