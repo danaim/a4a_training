@@ -2,7 +2,7 @@
 
 A one-week, modular training course on stock assessment with the
 **a4a** (Assessment for All) framework, delivered at the European Commission
-Joint Research Centre (JRC), Ispra.
+Joint Research Centre (JRC), Ispra on 14-18 of September 2026.
 
 The course is built for a small group of experts bringing **their own data**.
 Presentation sessions are deliberately short; roughly half of each day is
@@ -58,6 +58,9 @@ FLR project: <https://flr-project.org>
 Parts of the Day 1 material are adapted from FLR training tutorials
 originally written by **Iago Mosqueira** (WMR) and subsequently modified by
 JRC colleagues, and from a4a training courses previously delivered at the JRC.
+
+The rest of the days are also based on two previous courses delivered at JRC, 
+one in the Summer of 2024 supported also by GFCM and one in May of 2025.
 
 <!-- TODO confirm this wording with the original authors before making the
      repository public -->
